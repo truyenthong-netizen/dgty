@@ -1,5 +1,5 @@
 # Tên phải TRÙNG với tên Worker bạn đã tạo trên Cloudflare, nếu không bản build sẽ báo lỗi.
-name = "danhgia"
+name = "dgty"
 main = "src/worker.js"
 compatibility_date = "2026-09-01"
 
