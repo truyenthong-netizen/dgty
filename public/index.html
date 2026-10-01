@@ -312,7 +312,7 @@
             <div class="g-label">✅ Đã xác thực Google</div>
             <div class="g-email" id="g-email"></div>
           </div>
-          <button type="button" class="link-btn" onclick="resetGoogle()">Đổi tài khoản</button>
+          <button type="button" class="link-btn" onclick="switchGoogleAccount()">Đổi tài khoản</button>
         </div>
         <div class="login-step-label"><span class="login-step-num">2</span> Nhập mã số / CCCD</div>
         <div class="form-group">
@@ -833,16 +833,34 @@ function decodeTicketPayload(t) {
   } catch (e) { return null; }
 }
 
+async function buildVerifyUrl() {
+  const { verifyUrl } = await api('config');
+  const back = location.origin + location.pathname.replace(/\/+$/, '');
+  return verifyUrl + (verifyUrl.includes('?') ? '&' : '?') + 'r=' + encodeURIComponent(back);
+}
+
 async function startGoogleVerify() {
   const btn = document.getElementById('btn-google');
   btn.disabled = true;
   showLoginError('');
   try {
-    const { verifyUrl } = await api('config');
-    const back = location.origin + location.pathname.replace(/\/+$/, '');
-    location.href = verifyUrl + (verifyUrl.includes('?') ? '&' : '?') + 'r=' + encodeURIComponent(back);
+    location.href = await buildVerifyUrl();
   } catch (e) {
     btn.disabled = false;
+    showLoginError('⚠️ ' + e.message);
+  }
+}
+
+/** Đăng xuất Google trên trình duyệt này rồi quay lại trang xác thực để đăng nhập tài khoản khác */
+async function switchGoogleAccount() {
+  if (!confirm('Để đổi tài khoản, trình duyệt sẽ ĐĂNG XUẤT tất cả tài khoản Google (Gmail, Drive…) trên máy này, ' +
+               'sau đó Quý Thầy/Cô đăng nhập lại bằng tài khoản muốn dùng.\n\n' +
+               'Mẹo: nếu không muốn đăng xuất, hãy mở trang này bằng cửa sổ ẩn danh.\n\nTiếp tục?')) return;
+  try {
+    const target = await buildVerifyUrl();
+    state.googleTicket = null;
+    location.href = 'https://accounts.google.com/Logout?continue=' + encodeURIComponent(target);
+  } catch (e) {
     showLoginError('⚠️ ' + e.message);
   }
 }
