@@ -4,7 +4,10 @@
  * Biến môi trường (Cloudflare → Worker → Settings → Variables and Secrets):
  *   APPS_SCRIPT_URL : URL Web App dạng https://script.google.com/macros/s/XXXX/exec
  *   PROXY_KEY       : chuỗi bí mật, trùng với Script property PROXY_KEY bên Apps Script (đặt dạng Secret)
+ *   VERIFY_URL      : URL Web App của Apps Script xác thực (apps-script-xacthuc), dạng .../exec
+ *   VERIFY_SECRET   : chuỗi bí mật, trùng với Script property VERIFY_SECRET của Apps Script xác thực (Secret)
  */
+import { verifyTicket, TicketError } from "./ticket.js";
 
 const MAX_BODY = 64 * 1024; // 64 KB
 
@@ -44,13 +47,38 @@ export async function handleApi(request, env) {
     return json({ success: false, code: "BAD_REQUEST", message: "Thiếu action" }, 400);
   }
 
+  // Cấu hình công khai cho trang đăng nhập (không cần gọi Apps Script)
+  if (body.action === "config") {
+    if (!env.VERIFY_URL) {
+      return json({ success: false, code: "CONFIG", message: "Máy chủ chưa cấu hình VERIFY_URL" });
+    }
+    return json({ success: true, data: { verifyUrl: env.VERIFY_URL } });
+  }
+
   const payload = {
     action: body.action,
     args: body.args && typeof body.args === "object" ? body.args : {},
     token: typeof body.token === "string" ? body.token : null,
     proxyKey: env.PROXY_KEY,
     clientIp: request.headers.get("CF-Connecting-IP") || "",
+    googleEmail: "", // chỉ Worker được điền, sau khi đã kiểm tra vé xác thực Google
   };
+
+  // Đăng nhập: bắt buộc có vé xác thực Google hợp lệ
+  if (body.action === "login") {
+    if (!env.VERIFY_SECRET) {
+      return json({ success: false, code: "CONFIG", message: "Máy chủ chưa cấu hình VERIFY_SECRET" }, 500);
+    }
+    try {
+      const t = await verifyTicket(body.googleTicket, env.VERIFY_SECRET);
+      payload.googleEmail = t.email;
+    } catch (e) {
+      if (e instanceof TicketError) {
+        return json({ success: false, code: "GOOGLE_AUTH", message: e.message });
+      }
+      throw e;
+    }
+  }
 
   let upstream;
   try {

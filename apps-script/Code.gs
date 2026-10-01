@@ -2,17 +2,25 @@
  * ============================================================
  * HỆ THỐNG ĐÁNH GIÁ VC-NLĐ — BACKEND API (Google Apps Script)
  * ============================================================
- * Frontend chạy trên Cloudflare Pages, gọi về đây qua
- * Pages Function /api  →  doPost (JSON).
+ * Frontend chạy trên Cloudflare Worker, gọi về đây qua /api  →  doPost (JSON).
+ * Worker đã xác thực tài khoản Google trước khi chuyển yêu cầu đăng nhập,
+ * và gửi kèm email đã xác thực trong trường googleEmail.
  *
  * Script Properties (Project Settings → Script properties):
- *   PROXY_KEY    : BẮT BUỘC — chuỗi bí mật, trùng với biến PROXY_KEY trên Cloudflare
- *   TOKEN_SECRET : tự sinh ở lần gọi đầu tiên nếu chưa có
+ *   PROXY_KEY             : BẮT BUỘC — chuỗi bí mật, trùng với biến PROXY_KEY trên Cloudflare
+ *   TOKEN_SECRET          : tự sinh ở lần gọi đầu tiên nếu chưa có
+ *   EMAIL_POLICY          : "bind" (mặc định) — lần đầu đăng nhập, email Google được gắn vào mã số;
+ *                                               các lần sau bắt buộc dùng đúng email đó
+ *                           "strict"          — chỉ cho đăng nhập khi cột Email đã được điền sẵn
+ *   ALLOWED_EMAIL_DOMAINS : (tùy chọn) chỉ nhận email thuộc các tên miền này, cách nhau dấu phẩy,
+ *                           ví dụ: ump.edu.vn,gmail.com
+ *
+ * Sheet DanhSachNhanSu: thêm cột "Email" (hệ thống tự tạo nếu chưa có).
  *
  * Cột sheet DuLieuDanhGia:
  *   A ThoiGian | B ThangDanhGia (MM-YYYY, text) | C HoTen | D DonVi
  *   E-G 1.1-1.3 | H-R 11 điểm thành phần | S Tổng | T Xếp loại | U Ghi chú A+
- *   V-X Trưởng đơn vị (điểm, loại, ghi chú) | Y MSNV (mới)
+ *   V-X Trưởng đơn vị (điểm, loại, ghi chú) | Y MSNV | Z Email Google người nộp
  * ============================================================
  */
 
@@ -36,9 +44,12 @@ const COL = {
   SEPDIEM:      21,  // V
   SEPLOAI:      22,  // W
   SEPGHICHU:    23,  // X
-  MSNV:         24   // Y
+  MSNV:         24,  // Y
+  EMAIL:        25   // Z
 };
-const TOTAL_COLS = 25;
+const TOTAL_COLS = 26;
+const LOGIN_HEADERS = ["Thời gian", "MSNV/CCCD", "Họ tên", "Đơn vị", "Vai trò", "Trạng thái", "Email Google", "IP"];
+const EMAIL_HEADER_NAMES = ["email", "gmail", "email google"];
 
 const TOKEN_TTL_SEC   = 8 * 60 * 60;   // phiên đăng nhập 8 giờ
 const LOGIN_MAX_FAIL  = 10;            // sai quá 10 lần / IP ...
@@ -118,28 +129,70 @@ function doPost(e) {
 }
 
 // ============================================================
-// 1. ĐĂNG NHẬP
+// 1. ĐĂNG NHẬP (Google + Mã số/CCCD)
 // ============================================================
 function login_(args, _user, req) {
-  const msnv = str_(args.msnv);
-  const ip   = str_(req.clientIp);
-  if (!msnv) throw appError_("Vui lòng nhập mã số", "BAD_INPUT");
-  checkRateLimit_(ip);
+  const msnv  = str_(args.msnv);
+  const ip    = str_(req.clientIp);
+  const email = str_(req.googleEmail).toLowerCase();   // do Worker điền sau khi xác thực Google
+  const log = (hoTen, donVi, role, status) => logLogin(msnv, hoTen, donVi, role, status, email, ip);
 
-  const matches = findStaff_(msnv);
+  if (!email) throw appError_("Vui lòng đăng nhập bằng tài khoản Google trước", "GOOGLE_AUTH");
+  if (!msnv) throw appError_("Vui lòng nhập mã số", "BAD_INPUT");
+  checkRateLimit_(ip, email);
+
+  const domains = str_(PropertiesService.getScriptProperties().getProperty("ALLOWED_EMAIL_DOMAINS"))
+    .toLowerCase().split(",").map(str_).filter(Boolean);
+  if (domains.length && domains.indexOf(email.split("@")[1]) < 0) {
+    registerFail_(ip, email);
+    log("", "", "Không xác định", "❌ Email ngoài tên miền cho phép");
+    throw appError_("Vui lòng dùng tài khoản email thuộc: " + domains.join(", "), "EMAIL_DOMAIN");
+  }
+
+  const staff = readStaff_();
+  const matches = staff.rows.filter(r => matchesId_(r.msnv, msnv));
   if (!matches.length) {
-    registerFail_(ip);
-    logLogin(msnv, "(Không tìm thấy)", "(Không tìm thấy)", "Không xác định", "❌ Sai mã số");
+    registerFail_(ip, email);
+    log("(Không tìm thấy)", "(Không tìm thấy)", "Không xác định", "❌ Sai mã số");
     throw appError_("Mã số không tồn tại!", "NOT_FOUND");
   }
 
+  // ---- Đối chiếu email Google với mã số ----
+  const bound = uniq_(matches.map(m => m.email).filter(Boolean));
+  const hoTen0 = matches[0].hoTen;
+  const donVi0 = matches.map(m => m.donVi).join(" | ");
+  let needBind = false;
+  if (bound.length) {
+    if (bound.indexOf(email) < 0) {
+      registerFail_(ip, email);
+      log(hoTen0, donVi0, "Không xác định", "❌ Email Google không khớp mã số");
+      throw appError_("Tài khoản Google " + email + " không khớp với mã số này. " +
+        "Vui lòng đăng nhập bằng email đã đăng ký, hoặc liên hệ Phòng Tổ chức cán bộ.", "EMAIL_MISMATCH");
+    }
+  } else {
+    const policy = str_(PropertiesService.getScriptProperties().getProperty("EMAIL_POLICY")).toLowerCase() || "bind";
+    if (policy === "strict") {
+      log(hoTen0, donVi0, "Không xác định", "❌ Mã số chưa đăng ký email");
+      throw appError_("Mã số này chưa được đăng ký email. Vui lòng liên hệ Phòng Tổ chức cán bộ.", "EMAIL_NOT_REGISTERED");
+    }
+    const owner = staff.rows.find(r => r.email === email && !matchesId_(r.msnv, msnv));
+    if (owner) {
+      registerFail_(ip, email);
+      log(hoTen0, donVi0, "Không xác định", "❌ Email đã gắn với mã số khác");
+      throw appError_("Tài khoản Google " + email + " đã được dùng cho một nhân sự khác. " +
+        "Vui lòng dùng email của chính mình, hoặc liên hệ Phòng Tổ chức cán bộ.", "EMAIL_TAKEN");
+    }
+    needBind = true;
+  }
+
+  // ---- Chọn đơn vị (người có nhiều dòng) ----
   let chosen;
   if (matches.length > 1) {
     const hasIdx = args.unitIndex !== undefined && args.unitIndex !== null && args.unitIndex !== "";
     if (!hasIdx) {
       return {
         multiUnit: true,
-        hoTen: matches[0].hoTen,
+        hoTen: hoTen0,
         donViList: matches.map(m => ({ donVi: m.donVi, role: m.role }))
       };
     }
@@ -150,62 +203,109 @@ function login_(args, _user, req) {
     chosen = matches[0];
   }
 
-  const user = { msnv: chosen.msnv, hoTen: chosen.hoTen, donVi: chosen.donVi, role: chosen.role };
+  if (needBind) bindEmail_(msnv, email);
+
+  const user = { msnv: chosen.msnv, hoTen: chosen.hoTen, donVi: chosen.donVi, role: chosen.role, email: email };
   const roleLabel = { hr: "Tổ chức cán bộ", manager: "Trưởng đơn vị", staff: "VC-NLĐ" }[user.role];
-  logLogin(msnv, user.hoTen, user.donVi, roleLabel, "✅ Thành công");
+  log(user.hoTen, user.donVi, roleLabel, needBind ? "✅ Thành công (gắn email lần đầu)" : "✅ Thành công");
   return { multiUnit: false, token: signToken_(user), user: user };
 }
 
-function findStaff_(msnv) {
-  const data = getSheet_(SHEET_NHANSU).getDataRange().getValues();
-  const h  = data[0].map(str_);
-  const iM = h.indexOf("MSNV"), iH = h.indexOf("HoTen"), iD = h.indexOf("DonVi"), iR = h.indexOf("TRUONG DON VI");
-  if (iM < 0 || iH < 0 || iD < 0)
+function staffHeaderIndex_(h) {
+  const low = h.map(x => str_(x).toLowerCase());
+  return {
+    iM: h.indexOf("MSNV"), iH: h.indexOf("HoTen"), iD: h.indexOf("DonVi"), iR: h.indexOf("TRUONG DON VI"),
+    iE: low.findIndex(x => EMAIL_HEADER_NAMES.indexOf(x) >= 0)
+  };
+}
+
+function readStaff_() {
+  const sheet = getSheet_(SHEET_NHANSU);
+  const data = sheet.getDataRange().getValues();
+  const h = data[0].map(str_);
+  const ix = staffHeaderIndex_(h);
+  if (ix.iM < 0 || ix.iH < 0 || ix.iD < 0)
     throw appError_("Sheet " + SHEET_NHANSU + " thiếu cột MSNV / HoTen / DonVi", "CONFIG");
 
-  const out = [];
+  const rows = [];
   for (let i = 1; i < data.length; i++) {
-    if (!matchesId_(data[i][iM], msnv)) continue;
-    const r = iR >= 0 ? str_(data[i][iR]).toLowerCase() : "";
-    out.push({
-      msnv:  str_(data[i][iM]),
-      hoTen: str_(data[i][iH]),
-      donVi: str_(data[i][iD]),
-      role:  r === "hr" ? "hr" : r === "x" ? "manager" : "staff"
+    const id = str_(data[i][ix.iM]);
+    if (!id) continue;
+    const r = ix.iR >= 0 ? str_(data[i][ix.iR]).toLowerCase() : "";
+    rows.push({
+      row:   i + 1,
+      msnv:  id,
+      hoTen: str_(data[i][ix.iH]),
+      donVi: str_(data[i][ix.iD]),
+      role:  r === "hr" ? "hr" : r === "x" ? "manager" : "staff",
+      email: ix.iE >= 0 ? str_(data[i][ix.iE]).toLowerCase() : ""
     });
   }
-  return out;
+  return { sheet: sheet, rows: rows, emailCol: ix.iE };
 }
 
-function checkRateLimit_(ip) {
-  if (!ip) return;
-  const n = Number(CacheService.getScriptCache().get("loginfail_" + ip) || 0);
-  if (n >= LOGIN_MAX_FAIL)
-    throw appError_("Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.", "RATE_LIMIT");
+/** Ghi email vào cột Email của mọi dòng thuộc mã số này (có khóa để tránh 2 người gắn cùng lúc). */
+function bindEmail_(msnv, email) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw appError_("Hệ thống đang bận, vui lòng thử lại sau ít giây", "BUSY");
+  try {
+    let st = readStaff_();
+    let col = st.emailCol;
+    if (col < 0) {
+      col = st.sheet.getLastColumn();
+      st.sheet.getRange(1, col + 1).setValue("Email").setFontWeight("bold");
+    }
+    // Đọc lại trong khóa: có thể vừa có người khác gắn
+    st = readStaff_();
+    const mine = st.rows.filter(r => matchesId_(r.msnv, msnv));
+    const already = uniq_(mine.map(m => m.email).filter(Boolean));
+    if (already.length && already.indexOf(email) < 0)
+      throw appError_("Mã số này vừa được gắn với một email khác. Vui lòng liên hệ Phòng Tổ chức cán bộ.", "EMAIL_MISMATCH");
+    if (st.rows.some(r => r.email === email && !matchesId_(r.msnv, msnv)))
+      throw appError_("Tài khoản Google " + email + " đã được dùng cho một nhân sự khác.", "EMAIL_TAKEN");
+    mine.forEach(r => { if (!r.email) st.sheet.getRange(r.row, col + 1).setValue(email); });
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
 }
-function registerFail_(ip) {
-  if (!ip) return;
+
+function uniq_(arr) { return arr.filter((v, i) => arr.indexOf(v) === i); }
+
+function checkRateLimit_(ip, email) {
   const cache = CacheService.getScriptCache();
-  const key = "loginfail_" + ip;
-  cache.put(key, String(Number(cache.get(key) || 0) + 1), LOGIN_BLOCK_SEC);
+  const keys = [ip && "loginfail_ip_" + ip, email && "loginfail_em_" + email].filter(Boolean);
+  keys.forEach(k => {
+    if (Number(cache.get(k) || 0) >= LOGIN_MAX_FAIL)
+      throw appError_("Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.", "RATE_LIMIT");
+  });
+}
+function registerFail_(ip, email) {
+  const cache = CacheService.getScriptCache();
+  [ip && "loginfail_ip_" + ip, email && "loginfail_em_" + email].filter(Boolean).forEach(k => {
+    cache.put(k, String(Number(cache.get(k) || 0) + 1), LOGIN_BLOCK_SEC);
+  });
 }
 
 // ============================================================
 // GHI LOG ĐĂNG NHẬP
 // ============================================================
-function logLogin(msnv, hoTen, donVi, role, status) {
+function logLogin(msnv, hoTen, donVi, role, status, email, ip) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(SHEET_LOGIN);
     if (!sheet) {
       sheet = ss.insertSheet(SHEET_LOGIN);
-      const h = ["Thời gian", "MSNV/CCCD", "Họ tên", "Đơn vị", "Vai trò", "Trạng thái"];
-      sheet.appendRow(h);
-      sheet.getRange(1, 1, 1, h.length).setBackground("#0f2557").setFontColor("white").setFontWeight("bold");
+      sheet.getRange(1, 1, 1, LOGIN_HEADERS.length).setValues([LOGIN_HEADERS])
+           .setBackground("#0f2557").setFontColor("white").setFontWeight("bold");
       sheet.setFrozenRows(1);
-      sheet.setColumnWidths(1, h.length, 150);
+      sheet.setColumnWidths(1, LOGIN_HEADERS.length, 150);
+    } else if (str_(sheet.getRange(1, 7).getValue()) !== LOGIN_HEADERS[6]) {
+      // Sheet cũ chỉ có 6 cột → bổ sung tiêu đề cột Email Google, IP
+      sheet.getRange(1, 7, 1, 2).setValues([[LOGIN_HEADERS[6], LOGIN_HEADERS[7]]])
+           .setBackground("#0f2557").setFontColor("white").setFontWeight("bold");
     }
-    sheet.appendRow([new Date(), "'" + msnv, hoTen, donVi, role, status]);
+    sheet.appendRow([new Date(), "'" + msnv, hoTen, donVi, role, status, email || "", ip || ""]);
   } catch (e) { console.error("Lỗi log: " + e); }
 }
 
@@ -273,6 +373,7 @@ function saveData_(args, user) {
     row[COL.XEPLOAI]  = xepLoai;
     row[COL.GHICHU]   = extra;
     row[COL.MSNV]     = user.msnv;
+    row[COL.EMAIL]    = user.email || "";
 
     const newRow = sheet.getLastRow() + 1;
     // Ép plain text TRƯỚC khi ghi để Sheets không tự đổi "09-2026" / MSNV thành số, ngày
@@ -504,7 +605,7 @@ function sign_(body) {
 
 function signToken_(user) {
   const payload = {
-    msnv: user.msnv, hoTen: user.hoTen, donVi: user.donVi, role: user.role,
+    msnv: user.msnv, hoTen: user.hoTen, donVi: user.donVi, role: user.role, email: user.email,
     exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SEC
   };
   const body = Utilities.base64EncodeWebSafe(JSON.stringify(payload), Utilities.Charset.UTF_8);
@@ -520,6 +621,7 @@ function verifyToken_(token) {
   try {
     payload = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString("UTF-8"));
   } catch (e) { throw invalid(); }
+  if (!payload.email) throw invalid();   // phiên cũ (trước khi bật đăng nhập Google)
   if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000))
     throw appError_("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại", "AUTH");
   return payload;
@@ -637,6 +739,8 @@ function gradeOf_(tong, coViPham) {
 function ensureMsnvHeader_(sheet) {
   const cell = sheet.getRange(1, COL.MSNV + 1);
   if (str_(cell.getValue()) !== "MSNV") cell.setValue("MSNV").setFontWeight("bold");
+  const ec = sheet.getRange(1, COL.EMAIL + 1);
+  if (str_(ec.getValue()) !== "EmailGoogle") ec.setValue("EmailGoogle").setFontWeight("bold");
 }
 
 function notify_(msg) {

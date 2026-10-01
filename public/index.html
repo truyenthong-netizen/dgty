@@ -104,6 +104,25 @@
     .login-logo img { width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 8px 24px rgba(15,37,87,.3); }
     .login-logo h1 { font-size: 1rem; font-weight: 800; color: var(--navy); margin-top: 12px; line-height: 1.4; }
     .login-logo .sub { font-size: 0.75rem; color: var(--gray-400); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+    .login-step-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+    .login-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: white; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .login-step-num.done { background: var(--success); }
+    .google-btn-wrap { display: flex; justify-content: center; min-height: 44px; }
+    .btn-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 320px; min-height: 46px; padding: 10px 18px; background: white; color: #1f1f1f; border: 1.5px solid #dadce0; border-radius: 50px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s, box-shadow .15s; }
+    .btn-google:hover:not(:disabled) { background: #f8fafc; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .btn-google:disabled { opacity: .6; cursor: wait; }
+    .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .google-note { font-size: 12px; color: var(--gray-400); text-align: center; margin-top: 10px; line-height: 1.5; }
+    .google-chip { display: flex; align-items: center; gap: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 18px; }
+    .google-chip .g-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+    .google-chip .g-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .google-chip .g-info { flex: 1; min-width: 0; }
+    .google-chip .g-label { font-size: 11px; color: #166534; font-weight: 600; }
+    .google-chip .g-email { font-size: 13px; font-weight: 700; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .link-btn { background: none; border: none; color: var(--primary); font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; padding: 6px; flex-shrink: 0; }
+    .link-btn:hover { text-decoration: underline; }
+    .login-error { background: #fef2f2; color: #b91c1c; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 14px; line-height: 1.5; }
+    .s-user-email { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .form-group { margin-bottom: 16px; }
     .form-group label, .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
     input[type="password"], input[type="text"], select, textarea {
@@ -271,10 +290,33 @@
         <h1>PHIẾU TỰ ĐÁNH GIÁ VC-NLĐ<br>ĐẠI HỌC Y DƯỢC TP. HỒ CHÍ MINH</h1>
         <div class="sub">Nhóm hành chính, hỗ trợ, phục vụ</div>
       </div>
-      <form id="login-form" autocomplete="off" onsubmit="handleVerify(event)">
+      <div id="login-error" class="login-error hidden"></div>
+
+      <!-- Bước 1: xác thực Google -->
+      <div id="login-step-google">
+        <div class="login-step-label"><span class="login-step-num">1</span> Xác thực bằng tài khoản Google</div>
+        <div class="google-btn-wrap">
+          <button type="button" class="btn-google" id="btn-google" onclick="startGoogleVerify()">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+            <span>Xác thực bằng Google</span>
+          </button>
+        </div>
+        <div class="google-note">Lần đầu đăng nhập, email Google sẽ được gắn với mã số của Quý Thầy/Cô.<br>Các lần sau vui lòng dùng đúng email này.</div>
+      </div>
+
+      <!-- Bước 2: nhập mã số -->
+      <form id="login-form" class="hidden" autocomplete="off" onsubmit="handleVerify(event)">
+        <div class="google-chip">
+          <div class="g-avatar" id="g-avatar">G</div>
+          <div class="g-info">
+            <div class="g-label">✅ Đã xác thực Google</div>
+            <div class="g-email" id="g-email"></div>
+          </div>
+          <button type="button" class="link-btn" onclick="resetGoogle()">Đổi tài khoản</button>
+        </div>
+        <div class="login-step-label"><span class="login-step-num">2</span> Nhập mã số / CCCD</div>
         <div class="form-group">
-          <label for="cccd_input">Mã số / CCCD</label>
-          <input type="password" id="cccd_input" placeholder="Nhập mã số để tiếp tục..." autocomplete="new-password">
+          <input type="password" id="cccd_input" placeholder="Nhập mã số để tiếp tục..." autocomplete="new-password" aria-label="Mã số / CCCD">
         </div>
         <button type="submit" id="btn-login" class="btn btn-primary">XÁC NHẬN →</button>
       </form>
@@ -300,6 +342,7 @@
       <div class="s-user-info">
         <div class="s-user-name" id="s-user-name">--</div>
         <div class="s-user-role" id="s-user-role">--</div>
+        <div class="s-user-email" id="s-user-email"></div>
       </div>
     </div>
     <nav class="sidebar-nav" id="sidebar-nav"></nav>
@@ -579,7 +622,7 @@ const PAGE_LABELS = {
   'page-hr-detail':    { title:'Chi tiết đơn vị', sub:'Danh sách VC-NLĐ theo đơn vị' }
 };
 
-const state = { token:null, user:null, pendingMsnv:null, hrMonth:'', mgrMonth:'' };
+const state = { token:null, user:null, pendingMsnv:null, hrMonth:'', mgrMonth:'', googleTicket:null };
 const reqSeq = {};   // chống kết quả trả về lộn thứ tự khi đổi tháng liên tục
 
 // ============================================================
@@ -620,7 +663,10 @@ async function api(action, args) {
     res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, args: args || {}, token: state.token })
+      body: JSON.stringify({
+        action, args: args || {}, token: state.token,
+        googleTicket: action === 'login' ? state.googleTicket : undefined
+      })
     });
   } catch (e) {
     throw new Error('Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.');
@@ -773,17 +819,83 @@ function updateNavBadge(pageId, count) {
 // ============================================================
 // ĐĂNG NHẬP / ĐĂNG XUẤT
 // ============================================================
+// ---- Bước 1: xác thực Google qua Apps Script (chạy dưới quyền người dùng) ----
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg || '';
+  el.classList.toggle('hidden', !msg);
+}
+
+function decodeTicketPayload(t) {
+  try {
+    const b = t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(decodeURIComponent(escape(atob(b + '==='.slice((b.length + 3) % 4)))));
+  } catch (e) { return null; }
+}
+
+async function startGoogleVerify() {
+  const btn = document.getElementById('btn-google');
+  btn.disabled = true;
+  showLoginError('');
+  try {
+    const { verifyUrl } = await api('config');
+    const back = location.origin + location.pathname.replace(/\/+$/, '');
+    location.href = verifyUrl + (verifyUrl.includes('?') ? '&' : '?') + 'r=' + encodeURIComponent(back);
+  } catch (e) {
+    btn.disabled = false;
+    showLoginError('⚠️ ' + e.message);
+  }
+}
+
+/** Khi quay về từ trang xác thực: URL có #gticket=... */
+function readTicketFromUrl() {
+  const m = /[#&]gticket=([A-Za-z0-9_\-.]+)/.exec(location.hash || '');
+  if (!m) return false;
+  history.replaceState(null, '', location.pathname + location.search);   // xóa vé khỏi thanh địa chỉ
+  const p = decodeTicketPayload(m[1]);
+  if (!p || !p.email) { showLoginError('⚠️ Xác thực Google không hợp lệ, vui lòng thử lại.'); return false; }
+  if (p.exp && p.exp * 1000 < Date.now()) { showLoginError('⚠️ Phiên xác thực Google đã hết hạn, vui lòng thử lại.'); return false; }
+  state.googleTicket = m[1];
+  document.getElementById('g-email').textContent = p.email;
+  document.getElementById('g-avatar').textContent = p.email.charAt(0).toUpperCase();
+  document.getElementById('login-step-google').classList.add('hidden');
+  document.getElementById('login-form').classList.remove('hidden');
+  setTimeout(() => document.getElementById('cccd_input').focus(), 50);
+  return true;
+}
+
+function resetGoogle(msg) {
+  state.googleTicket = null;
+  document.getElementById('cccd_input').value = '';
+  document.getElementById('login-form').classList.add('hidden');
+  document.getElementById('login-step-google').classList.remove('hidden');
+  document.getElementById('btn-google').disabled = false;
+  showLoginError(msg || '');
+}
+
+// ---- Bước 2: mã số ----
+function handleLoginError(e) {
+  if (e.code === 'GOOGLE_AUTH' || e.code === 'EMAIL_MISMATCH' || e.code === 'EMAIL_TAKEN' || e.code === 'EMAIL_DOMAIN') {
+    closeUnitPicker();
+    resetGoogle('⚠️ ' + e.message);
+  } else {
+    showLoginError('⚠️ ' + e.message);
+  }
+}
+
 async function handleVerify(ev) {
   if (ev) ev.preventDefault();
+  if (!state.googleTicket) return resetGoogle('Vui lòng xác thực bằng tài khoản Google trước.');
   const msnv = document.getElementById('cccd_input').value.trim();
-  if (!msnv) return alert('Vui lòng nhập mã số!');
+  if (!msnv) return showLoginError('Vui lòng nhập mã số!');
+  showLoginError('');
   const btn = document.getElementById('btn-login');
   setBusy(btn, true, '⏳ Đang xác nhận...');
   try {
     const res = await api('login', { msnv });
     if (res.multiUnit) { state.pendingMsnv = msnv; showUnitPicker(res); }
     else finishLogin(res);
-  } catch (e) { showError(e); }
+  } catch (e) { handleLoginError(e); }
   finally { setBusy(btn, false); }
 }
 
@@ -820,7 +932,7 @@ async function confirmUnitPick() {
     const res = await api('login', { msnv: state.pendingMsnv, unitIndex: Number(idx) });
     closeUnitPicker();
     finishLogin(res);
-  } catch (e) { showError(e); setBusy(btn, false); }
+  } catch (e) { setBusy(btn, false); closeUnitPicker(); handleLoginError(e); }
 }
 
 function finishLogin(res) {
@@ -829,6 +941,7 @@ function finishLogin(res) {
   store.set('vcnld_token', res.token);
   store.set('vcnld_user', JSON.stringify(res.user));
   document.getElementById('cccd_input').value = '';
+  state.googleTicket = null;   // chỉ dùng cho bước đăng nhập
   enterApp();
 }
 
@@ -840,6 +953,7 @@ function enterApp() {
   document.getElementById('s-avatar-initials').textContent = last.charAt(0).toUpperCase();
   document.getElementById('s-user-name').textContent = u.hoTen;
   document.getElementById('s-user-role').textContent = ROLE_LABEL[u.role] + ' · ' + u.donVi;
+  document.getElementById('s-user-email').textContent = u.email || '';
   document.getElementById('dsp-name').textContent = u.hoTen;
   document.getElementById('dsp-unit').textContent = u.donVi;
   document.getElementById('mgr-unit-info').textContent = u.donVi;
@@ -1307,10 +1421,15 @@ document.addEventListener('DOMContentLoaded', () => {
   resetForm();
 
   const token = store.get('vcnld_token'), user = store.get('vcnld_user');
+  let restored = false;
   if (token && user) {
-    try { state.token = token; state.user = JSON.parse(user); enterApp(); }
-    catch (e) { logout(); }
+    try {
+      const u = JSON.parse(user);
+      if (u && u.email) { state.token = token; state.user = u; enterApp(); restored = true; }
+    } catch (e) {}
+    if (!restored) { store.del('vcnld_token'); store.del('vcnld_user'); }   // phiên cũ chưa có xác thực Google
   }
+  if (!restored) readTicketFromUrl();
 });
 </script>
 </body>
