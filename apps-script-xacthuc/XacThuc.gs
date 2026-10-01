@@ -36,7 +36,8 @@ function doGet(e) {
   // Link "Dùng tài khoản khác": đăng xuất Google rồi quay lại chính trang này
   let switchUrl = "";
   try {
-    const selfUrl = ScriptApp.getService().getUrl();
+    // Bỏ phần "/a/macros/<tên miền>/" để trang đăng nhập nhận mọi tài khoản Google (kể cả Gmail)
+    const selfUrl = String(ScriptApp.getService().getUrl() || "").replace(/\/a\/macros\/[^/]+\//, "/macros/");
     if (selfUrl) switchUrl = "https://accounts.google.com/Logout?continue=" +
       encodeURIComponent(selfUrl + "?r=" + encodeURIComponent(back));
   } catch (err) { /* không lấy được URL → ẩn nút đổi tài khoản */ }
