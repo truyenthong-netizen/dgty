@@ -9,13 +9,15 @@
  * Script Properties (Project Settings → Script properties):
  *   PROXY_KEY             : BẮT BUỘC — chuỗi bí mật, trùng với biến PROXY_KEY trên Cloudflare
  *   TOKEN_SECRET          : tự sinh ở lần gọi đầu tiên nếu chưa có
- *   EMAIL_POLICY          : "bind" (mặc định) — lần đầu đăng nhập, email Google được gắn vào mã số;
- *                                               các lần sau bắt buộc dùng đúng email đó
- *                           "strict"          — chỉ cho đăng nhập khi cột Email đã được điền sẵn
+ *   EMAIL_POLICY          : "log" (mặc định) — bắt buộc xác thực Google (email nào cũng được),
+ *                                              nhập đúng mã số là vào; email chỉ ghi vào nhật ký
+ *                           "bind"           — lần đầu đăng nhập, email Google được gắn vào mã số;
+ *                                              các lần sau bắt buộc dùng đúng email đó
+ *                           "strict"         — chỉ cho đăng nhập khi cột Email đã được điền sẵn
  *   ALLOWED_EMAIL_DOMAINS : (tùy chọn) chỉ nhận email thuộc các tên miền này, cách nhau dấu phẩy,
  *                           ví dụ: ump.edu.vn,gmail.com
  *
- * Sheet DanhSachNhanSu: thêm cột "Email" (hệ thống tự tạo nếu chưa có).
+ * Sheet DanhSachNhanSu: cột "Email" chỉ dùng cho chế độ bind/strict (tự tạo nếu cần).
  *
  * Cột sheet DuLieuDanhGia:
  *   A ThoiGian | B ThangDanhGia (MM-YYYY, text) | C HoTen | D DonVi
@@ -157,12 +159,15 @@ function login_(args, _user, req) {
     throw appError_("Mã số không tồn tại!", "NOT_FOUND");
   }
 
-  // ---- Đối chiếu email Google với mã số ----
+  // ---- Đối chiếu email Google với mã số (chỉ ở chế độ bind / strict) ----
+  const policy = str_(PropertiesService.getScriptProperties().getProperty("EMAIL_POLICY")).toLowerCase() || "log";
   const bound = uniq_(matches.map(m => m.email).filter(Boolean));
   const hoTen0 = matches[0].hoTen;
   const donVi0 = matches.map(m => m.donVi).join(" | ");
   let needBind = false;
-  if (bound.length) {
+  if (policy === "log") {
+    // Chỉ ghi nhận email vào nhật ký, không ràng buộc
+  } else if (bound.length) {
     if (bound.indexOf(email) < 0) {
       registerFail_(ip, email);
       log(hoTen0, donVi0, "Không xác định", "❌ Email Google không khớp mã số");
@@ -170,7 +175,6 @@ function login_(args, _user, req) {
         "Vui lòng đăng nhập bằng email đã đăng ký, hoặc liên hệ Phòng Tổ chức cán bộ.", "EMAIL_MISMATCH");
     }
   } else {
-    const policy = str_(PropertiesService.getScriptProperties().getProperty("EMAIL_POLICY")).toLowerCase() || "bind";
     if (policy === "strict") {
       log(hoTen0, donVi0, "Không xác định", "❌ Mã số chưa đăng ký email");
       throw appError_("Mã số này chưa được đăng ký email. Vui lòng liên hệ Phòng Tổ chức cán bộ.", "EMAIL_NOT_REGISTERED");
