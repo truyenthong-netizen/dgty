@@ -834,7 +834,8 @@ function decodeTicketPayload(t) {
 }
 
 async function buildVerifyUrl() {
-  const { verifyUrl } = await api('config');
+  let { verifyUrl } = await api('config');
+  verifyUrl = String(verifyUrl).replace(/\/a\/macros\/[^/]+\//, '/macros/');   // nhận mọi tài khoản Google, không khóa tên miền
   const back = location.origin + location.pathname.replace(/\/+$/, '');
   return verifyUrl + (verifyUrl.includes('?') ? '&' : '?') + 'r=' + encodeURIComponent(back);
 }
