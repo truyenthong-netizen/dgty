@@ -33,10 +33,18 @@ function doGet(e) {
   const asked = String((e && e.parameter && e.parameter.r) || "").replace(/\/+$/, "");
   const back = returns.indexOf(asked) >= 0 ? asked : returns[0];
 
+  // Link "Dùng tài khoản khác": đăng xuất Google rồi quay lại chính trang này
+  let switchUrl = "";
+  try {
+    const selfUrl = ScriptApp.getService().getUrl();
+    if (selfUrl) switchUrl = "https://accounts.google.com/Logout?continue=" +
+      encodeURIComponent(selfUrl + "?r=" + encodeURIComponent(back));
+  } catch (err) { /* không lấy được URL → ẩn nút đổi tài khoản */ }
+
   const email = String(Session.getActiveUser().getEmail() || "").trim().toLowerCase();
   if (!email) {
     return page_("⚠️ Không đọc được email",
-      "Google không cung cấp email của tài khoản này. Vui lòng thử lại bằng cửa sổ ẩn danh.", back);
+      "Google không cung cấp email của tài khoản này. Vui lòng thử lại bằng cửa sổ ẩn danh.", back, switchUrl);
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -46,7 +54,7 @@ function doGet(e) {
   ).replace(/=+$/, "");
   const sig = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(body, secret)).replace(/=+$/, "");
 
-  return page_("✅ Đã xác thực tài khoản Google", email, back + "/#gticket=" + body + "." + sig);
+  return page_("✅ Đã xác thực tài khoản Google", email, back + "/#gticket=" + body + "." + sig, switchUrl);
 }
 
 function esc_(s) {
@@ -55,7 +63,7 @@ function esc_(s) {
   });
 }
 
-function page_(title, detail, url) {
+function page_(title, detail, url, switchUrl) {
   const ok = url && url.indexOf("#gticket=") > 0;
   const html =
     '<!DOCTYPE html><html><head><meta charset="utf-8">' +
@@ -67,11 +75,14 @@ function page_(title, detail, url) {
     '.e{font-size:16px;font-weight:bold;color:#1e293b;word-break:break-all;margin-bottom:22px}' +
     'a.b{display:block;background:#1a56db;color:#fff;text-decoration:none;font-weight:bold;padding:14px;border-radius:8px;font-size:15px}' +
     'p{font-size:12px;color:#64748b;line-height:1.6;margin:18px 0 0}' +
+    'a.s{display:block;margin-top:12px;padding:12px;border:1.5px solid #dadce0;border-radius:8px;color:#1a56db;text-decoration:none;font-weight:bold;font-size:14px}' +
     '</style></head><body><div class="c">' +
     '<h1>' + esc_(title) + '</h1>' +
     '<div class="e">' + esc_(detail) + '</div>' +
     (url ? '<a class="b" href="' + esc_(url) + '" target="_top">' + (ok ? 'TIẾP TỤC →' : '← Quay lại') + '</a>' : '') +
-    (ok ? '<p>Không phải tài khoản của bạn? Đăng xuất Google hoặc mở trang đánh giá bằng cửa sổ ẩn danh rồi thử lại.</p>' : '') +
+    (switchUrl ? '<a class="s" href="' + esc_(switchUrl) + '" target="_top">Dùng tài khoản Google khác</a>' : '') +
+    (switchUrl ? '<p>"Dùng tài khoản Google khác" sẽ đăng xuất mọi tài khoản Google trên trình duyệt này, sau đó Quý Thầy/Cô đăng nhập lại bằng tài khoản muốn dùng. ' +
+                 'Nếu không muốn đăng xuất, hãy mở trang đánh giá bằng cửa sổ ẩn danh.</p>' : '') +
     '</div></body></html>';
   return HtmlService.createHtmlOutput(html)
     .setTitle("Xác thực tài khoản Google")
