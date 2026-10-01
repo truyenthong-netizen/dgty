@@ -1,0 +1,12 @@
+# Tên phải TRÙNG với tên Worker bạn đã tạo trên Cloudflare, nếu không bản build sẽ báo lỗi.
+name = "vcnld-danhgia"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+
+# Giữ nguyên các biến đã đặt trên dashboard mỗi lần deploy
+keep_vars = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api"]
