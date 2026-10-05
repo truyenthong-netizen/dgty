@@ -104,25 +104,6 @@
     .login-logo img { width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 8px 24px rgba(15,37,87,.3); }
     .login-logo h1 { font-size: 1rem; font-weight: 800; color: var(--navy); margin-top: 12px; line-height: 1.4; }
     .login-logo .sub { font-size: 0.75rem; color: var(--gray-400); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
-    .login-step-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
-    .login-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: white; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .login-step-num.done { background: var(--success); }
-    .google-btn-wrap { display: flex; justify-content: center; min-height: 44px; }
-    .btn-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 320px; min-height: 46px; padding: 10px 18px; background: white; color: #1f1f1f; border: 1.5px solid #dadce0; border-radius: 50px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s, box-shadow .15s; }
-    .btn-google:hover:not(:disabled) { background: #f8fafc; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .btn-google:disabled { opacity: .6; cursor: wait; }
-    .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
-    .google-note { font-size: 12px; color: var(--gray-400); text-align: center; margin-top: 10px; line-height: 1.5; }
-    .google-chip { display: flex; align-items: center; gap: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 18px; }
-    .google-chip .g-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
-    .google-chip .g-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .google-chip .g-info { flex: 1; min-width: 0; }
-    .google-chip .g-label { font-size: 11px; color: #166534; font-weight: 600; }
-    .google-chip .g-email { font-size: 13px; font-weight: 700; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .link-btn { background: none; border: none; color: var(--primary); font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; padding: 6px; flex-shrink: 0; }
-    .link-btn:hover { text-decoration: underline; }
-    .login-error { background: #fef2f2; color: #b91c1c; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 14px; line-height: 1.5; }
-    .s-user-email { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .form-group { margin-bottom: 16px; }
     .form-group label, .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
     input[type="password"], input[type="text"], select, textarea {
@@ -290,33 +271,10 @@
         <h1>PHIẾU TỰ ĐÁNH GIÁ VC-NLĐ<br>ĐẠI HỌC Y DƯỢC TP. HỒ CHÍ MINH</h1>
         <div class="sub">Nhóm hành chính, hỗ trợ, phục vụ</div>
       </div>
-      <div id="login-error" class="login-error hidden"></div>
-
-      <!-- Bước 1: xác thực Google -->
-      <div id="login-step-google">
-        <div class="login-step-label"><span class="login-step-num">1</span> Xác thực bằng tài khoản Google</div>
-        <div class="google-btn-wrap">
-          <button type="button" class="btn-google" id="btn-google" onclick="startGoogleVerify()">
-            <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
-            <span>Xác thực bằng Google</span>
-          </button>
-        </div>
-        <div class="google-note">Dùng tài khoản Google bất kỳ (email trường hoặc Gmail).<br>Email xác thực sẽ được ghi vào nhật ký đăng nhập.</div>
-      </div>
-
-      <!-- Bước 2: nhập mã số -->
-      <form id="login-form" class="hidden" autocomplete="off" onsubmit="handleVerify(event)">
-        <div class="google-chip">
-          <div class="g-avatar" id="g-avatar">G</div>
-          <div class="g-info">
-            <div class="g-label">✅ Đã xác thực Google</div>
-            <div class="g-email" id="g-email"></div>
-          </div>
-          <button type="button" class="link-btn" onclick="switchGoogleAccount()">Đổi tài khoản</button>
-        </div>
-        <div class="login-step-label"><span class="login-step-num">2</span> Nhập mã số / CCCD</div>
+      <form id="login-form" autocomplete="off" onsubmit="handleVerify(event)">
         <div class="form-group">
-          <input type="password" id="cccd_input" placeholder="Nhập mã số để tiếp tục..." autocomplete="new-password" aria-label="Mã số / CCCD">
+          <label for="cccd_input">Mã số / CCCD</label>
+          <input type="password" id="cccd_input" placeholder="Nhập mã số để tiếp tục..." autocomplete="new-password">
         </div>
         <button type="submit" id="btn-login" class="btn btn-primary">XÁC NHẬN →</button>
       </form>
@@ -342,7 +300,6 @@
       <div class="s-user-info">
         <div class="s-user-name" id="s-user-name">--</div>
         <div class="s-user-role" id="s-user-role">--</div>
-        <div class="s-user-email" id="s-user-email"></div>
       </div>
     </div>
     <nav class="sidebar-nav" id="sidebar-nav"></nav>
@@ -622,7 +579,7 @@ const PAGE_LABELS = {
   'page-hr-detail':    { title:'Chi tiết đơn vị', sub:'Danh sách VC-NLĐ theo đơn vị' }
 };
 
-const state = { token:null, user:null, pendingMsnv:null, hrMonth:'', mgrMonth:'', googleTicket:null };
+const state = { token:null, user:null, pendingMsnv:null, hrMonth:'', mgrMonth:'' };
 const reqSeq = {};   // chống kết quả trả về lộn thứ tự khi đổi tháng liên tục
 
 // ============================================================
@@ -663,10 +620,7 @@ async function api(action, args) {
     res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action, args: args || {}, token: state.token,
-        googleTicket: action === 'login' ? state.googleTicket : undefined
-      })
+      body: JSON.stringify({ action, args: args || {}, token: state.token })
     });
   } catch (e) {
     throw new Error('Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.');
@@ -819,103 +773,51 @@ function updateNavBadge(pageId, count) {
 // ============================================================
 // ĐĂNG NHẬP / ĐĂNG XUẤT
 // ============================================================
-// ---- Bước 1: xác thực Google qua Apps Script (chạy dưới quyền người dùng) ----
-function showLoginError(msg) {
-  const el = document.getElementById('login-error');
-  el.textContent = msg || '';
-  el.classList.toggle('hidden', !msg);
-}
-
-function decodeTicketPayload(t) {
-  try {
-    const b = t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(decodeURIComponent(escape(atob(b + '==='.slice((b.length + 3) % 4)))));
-  } catch (e) { return null; }
-}
-
-async function buildVerifyUrl() {
-  let { verifyUrl } = await api('config');
-  verifyUrl = String(verifyUrl).replace(/\/a\/macros\/[^/]+\//, '/macros/');   // nhận mọi tài khoản Google, không khóa tên miền
-  const back = location.origin + location.pathname.replace(/\/+$/, '');
-  return verifyUrl + (verifyUrl.includes('?') ? '&' : '?') + 'r=' + encodeURIComponent(back);
-}
-
-async function startGoogleVerify() {
-  const btn = document.getElementById('btn-google');
-  btn.disabled = true;
-  showLoginError('');
-  try {
-    location.href = await buildVerifyUrl();
-  } catch (e) {
-    btn.disabled = false;
-    showLoginError('⚠️ ' + e.message);
-  }
-}
-
-/** Đăng xuất Google trên trình duyệt này rồi quay lại trang xác thực để đăng nhập tài khoản khác */
-async function switchGoogleAccount() {
-  if (!confirm('Để đổi tài khoản, trình duyệt sẽ ĐĂNG XUẤT tất cả tài khoản Google (Gmail, Drive…) trên máy này, ' +
-               'sau đó Quý Thầy/Cô đăng nhập lại bằng tài khoản muốn dùng.\n\n' +
-               'Mẹo: nếu không muốn đăng xuất, hãy mở trang này bằng cửa sổ ẩn danh.\n\nTiếp tục?')) return;
-  try {
-    const target = await buildVerifyUrl();
-    state.googleTicket = null;
-    location.href = 'https://accounts.google.com/Logout?continue=' + encodeURIComponent(target);
-  } catch (e) {
-    showLoginError('⚠️ ' + e.message);
-  }
-}
-
-/** Khi quay về từ trang xác thực: URL có #gticket=... */
-function readTicketFromUrl() {
-  const m = /[#&]gticket=([A-Za-z0-9_\-.]+)/.exec(location.hash || '');
-  if (!m) return false;
-  history.replaceState(null, '', location.pathname + location.search);   // xóa vé khỏi thanh địa chỉ
-  const p = decodeTicketPayload(m[1]);
-  if (!p || !p.email) { showLoginError('⚠️ Xác thực Google không hợp lệ, vui lòng thử lại.'); return false; }
-  if (p.exp && p.exp * 1000 < Date.now()) { showLoginError('⚠️ Phiên xác thực Google đã hết hạn, vui lòng thử lại.'); return false; }
-  state.googleTicket = m[1];
-  document.getElementById('g-email').textContent = p.email;
-  document.getElementById('g-avatar').textContent = p.email.charAt(0).toUpperCase();
-  document.getElementById('login-step-google').classList.add('hidden');
-  document.getElementById('login-form').classList.remove('hidden');
-  setTimeout(() => document.getElementById('cccd_input').focus(), 50);
-  return true;
-}
-
-function resetGoogle(msg) {
-  state.googleTicket = null;
-  document.getElementById('cccd_input').value = '';
-  document.getElementById('login-form').classList.add('hidden');
-  document.getElementById('login-step-google').classList.remove('hidden');
-  document.getElementById('btn-google').disabled = false;
-  showLoginError(msg || '');
-}
-
-// ---- Bước 2: mã số ----
-function handleLoginError(e) {
-  if (e.code === 'GOOGLE_AUTH' || e.code === 'EMAIL_MISMATCH' || e.code === 'EMAIL_TAKEN' || e.code === 'EMAIL_DOMAIN') {
-    closeUnitPicker();
-    resetGoogle('⚠️ ' + e.message);
-  } else {
-    showLoginError('⚠️ ' + e.message);
-  }
+// Thông tin thiết bị gửi kèm khi đăng nhập (chỉ để ghi lịch sử đăng nhập)
+let deviceInfoPromise = null;
+function getDeviceInfo() {
+  if (!deviceInfoPromise) deviceInfoPromise = (async () => {
+    const d = {
+      screen: `${screen.width}x${screen.height}@${Math.round((window.devicePixelRatio || 1) * 100) / 100}`,
+      lang: navigator.language || '',
+      touchPoints: navigator.maxTouchPoints || 0
+    };
+    try { d.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    try {
+      const uad = navigator.userAgentData;
+      if (uad) {
+        d.platform = uad.platform || '';
+        if (uad.getHighEntropyValues) {
+          const h = await Promise.race([
+            uad.getHighEntropyValues(['model', 'platformVersion']),
+            new Promise(r => setTimeout(() => r(null), 800))
+          ]);
+          if (h) { d.model = h.model || ''; d.platform = h.platform || d.platform; d.platformVersion = h.platformVersion || ''; }
+        }
+      }
+    } catch (e) {}
+    return d;
+  })();
+  return deviceInfoPromise;
 }
 
 async function handleVerify(ev) {
   if (ev) ev.preventDefault();
-  if (!state.googleTicket) return resetGoogle('Vui lòng xác thực bằng tài khoản Google trước.');
   const msnv = document.getElementById('cccd_input').value.trim();
-  if (!msnv) return showLoginError('Vui lòng nhập mã số!');
-  showLoginError('');
+  if (!msnv) return alert('Vui lòng nhập mã số!');
   const btn = document.getElementById('btn-login');
   setBusy(btn, true, '⏳ Đang xác nhận...');
   try {
-    const res = await api('login', { msnv });
+    const res = await api('login', { msnv, device: await getDeviceInfo() });
     if (res.multiUnit) { state.pendingMsnv = msnv; showUnitPicker(res); }
-    else finishLogin(res);
-  } catch (e) { handleLoginError(e); }
+    else handleLoginResult(res);
+  } catch (e) { showError(e); }
   finally { setBusy(btn, false); }
+}
+
+function handleLoginResult(res) {
+  if (res.otpRequired) showOtpModal(res);
+  else finishLogin(res);
 }
 
 function showUnitPicker(res) {
@@ -948,10 +850,117 @@ async function confirmUnitPick() {
   const btn = document.getElementById('btn-unit-pick');
   setBusy(btn, true, '⏳ Đang xác nhận...');
   try {
-    const res = await api('login', { msnv: state.pendingMsnv, unitIndex: Number(idx) });
+    const res = await api('login', { msnv: state.pendingMsnv, unitIndex: Number(idx), device: await getDeviceInfo() });
     closeUnitPicker();
+    handleLoginResult(res);
+  } catch (e) { showError(e); setBusy(btn, false); }
+}
+
+// ============================================================
+// XÁC THỰC OTP QUA EMAIL (Trưởng đơn vị / HR)
+// ============================================================
+const otp = { id: null, expiresAt: 0, resendAt: 0, timer: null, busy: false };
+
+function showOtpModal(res) {
+  otp.id = res.otpId;
+  otp.expiresAt = Date.now() + res.expiresIn * 1000;
+  otp.resendAt  = Date.now() + res.resendAfter * 1000;
+  let modal = document.getElementById('otp-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'otp-modal';
+    modal.className = 'modal-backdrop';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div class="modal-box">
+    <div style="font-size:40px;margin-bottom:10px;">📧</div>
+    <h3 style="color:var(--navy);margin:0 0 6px;font-size:1.1rem;">Xác thực đăng nhập</h3>
+    <p style="color:var(--gray-600);font-size:13px;margin-bottom:16px;">Mã OTP gồm 6 chữ số đã được gửi tới<br><b id="otp-email">${esc(res.maskedEmail)}</b></p>
+    <input id="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"
+           style="text-align:center;font-size:26px;letter-spacing:10px;font-weight:700;margin-bottom:6px;">
+    <div id="otp-countdown" style="font-size:12px;color:var(--gray-400);margin-bottom:4px;"></div>
+    <div id="otp-status" class="status-msg"></div>
+    <button class="btn btn-primary" id="btn-otp-verify" onclick="submitOtp()">XÁC NHẬN →</button>
+    <button class="btn btn-gray" id="btn-otp-resend" onclick="resendOtp()" disabled>Gửi lại mã</button>
+    <button class="btn btn-gray" onclick="closeOtpModal()">Hủy</button>
+    <p style="font-size:11px;color:var(--gray-400);margin-top:12px;">Không thấy email? Kiểm tra thư mục Spam / Quảng cáo.</p>
+  </div>`;
+  modal.classList.remove('hidden');
+  const input = document.getElementById('otp-input');
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '').slice(0, 6);
+    if (input.value.length === 6) submitOtp();
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submitOtp(); });
+  setTimeout(() => input.focus(), 50);
+  clearInterval(otp.timer);
+  otp.timer = setInterval(tickOtp, 1000);
+  tickOtp();
+}
+
+function tickOtp() {
+  const cd = document.getElementById('otp-countdown'), rb = document.getElementById('btn-otp-resend');
+  if (!cd || !rb) return;
+  const left = Math.max(0, Math.round((otp.expiresAt - Date.now()) / 1000));
+  cd.textContent = left > 0
+    ? `Mã hết hạn sau ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`
+    : 'Mã đã hết hạn — vui lòng bấm "Gửi lại mã".';
+  const wait = Math.max(0, Math.round((otp.resendAt - Date.now()) / 1000));
+  if (!otp.busy) {
+    rb.disabled = wait > 0;
+    rb.textContent = wait > 0 ? `Gửi lại mã (${wait}s)` : 'Gửi lại mã';
+  }
+}
+
+function closeOtpModal() {
+  clearInterval(otp.timer);
+  otp.id = null;
+  const m = document.getElementById('otp-modal');
+  if (m) m.classList.add('hidden');
+}
+
+async function submitOtp() {
+  const input = document.getElementById('otp-input');
+  const code = (input.value || '').replace(/\D/g, '');
+  const st = document.getElementById('otp-status');
+  if (code.length !== 6) return setStatus(st, 'done', 'Vui lòng nhập đủ 6 chữ số');
+  if (otp.busy) return;
+  const btn = document.getElementById('btn-otp-verify');
+  otp.busy = true;
+  setBusy(btn, true, '⏳ Đang kiểm tra...');
+  setStatus(st, '', '');
+  try {
+    const res = await api('verifyOtp', { otpId: otp.id, code, device: await getDeviceInfo() });
+    closeOtpModal();
     finishLogin(res);
-  } catch (e) { setBusy(btn, false); closeUnitPicker(); handleLoginError(e); }
+  } catch (e) {
+    if (e.code === 'OTP_EXPIRED') { closeOtpModal(); alert('⚠️ ' + e.message); }
+    else { setStatus(st, 'done', esc(e.message)); input.value = ''; input.focus(); }
+  } finally {
+    otp.busy = false;
+    setBusy(btn, false);
+  }
+}
+
+async function resendOtp() {
+  const btn = document.getElementById('btn-otp-resend');
+  const st = document.getElementById('otp-status');
+  otp.busy = true;
+  setBusy(btn, true, '⏳ Đang gửi...');
+  try {
+    const res = await api('resendOtp', { otpId: otp.id, device: await getDeviceInfo() });
+    otp.expiresAt = Date.now() + res.expiresIn * 1000;
+    otp.resendAt  = Date.now() + res.resendAfter * 1000;
+    setStatus(st, 'ready', 'Đã gửi mã mới tới ' + esc(res.maskedEmail));
+    document.getElementById('otp-input').value = '';
+  } catch (e) {
+    if (e.code === 'OTP_EXPIRED') { closeOtpModal(); alert('⚠️ ' + e.message); }
+    else setStatus(st, 'done', esc(e.message));
+  } finally {
+    otp.busy = false;
+    setBusy(btn, false);
+    tickOtp();
+  }
 }
 
 function finishLogin(res) {
@@ -960,7 +969,6 @@ function finishLogin(res) {
   store.set('vcnld_token', res.token);
   store.set('vcnld_user', JSON.stringify(res.user));
   document.getElementById('cccd_input').value = '';
-  state.googleTicket = null;   // chỉ dùng cho bước đăng nhập
   enterApp();
 }
 
@@ -972,7 +980,6 @@ function enterApp() {
   document.getElementById('s-avatar-initials').textContent = last.charAt(0).toUpperCase();
   document.getElementById('s-user-name').textContent = u.hoTen;
   document.getElementById('s-user-role').textContent = ROLE_LABEL[u.role] + ' · ' + u.donVi;
-  document.getElementById('s-user-email').textContent = u.email || '';
   document.getElementById('dsp-name').textContent = u.hoTen;
   document.getElementById('dsp-unit').textContent = u.donVi;
   document.getElementById('mgr-unit-info').textContent = u.donVi;
@@ -1432,6 +1439,7 @@ function exportToCSV() {
 // KHỞI ĐỘNG
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  getDeviceInfo();
   buildScoreRadios();
   initMonthPicker('mp-home', onHomeMonth);
   initMonthPicker('mp-mgr', () => setStatus(document.getElementById('status-msg-mgr'), '', ''));
@@ -1440,15 +1448,10 @@ document.addEventListener('DOMContentLoaded', () => {
   resetForm();
 
   const token = store.get('vcnld_token'), user = store.get('vcnld_user');
-  let restored = false;
   if (token && user) {
-    try {
-      const u = JSON.parse(user);
-      if (u && u.email) { state.token = token; state.user = u; enterApp(); restored = true; }
-    } catch (e) {}
-    if (!restored) { store.del('vcnld_token'); store.del('vcnld_user'); }   // phiên cũ chưa có xác thực Google
+    try { state.token = token; state.user = JSON.parse(user); enterApp(); }
+    catch (e) { logout(); }
   }
-  if (!restored) readTicketFromUrl();
 });
 </script>
 </body>
